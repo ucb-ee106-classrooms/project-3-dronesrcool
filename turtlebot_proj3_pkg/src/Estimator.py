@@ -246,6 +246,21 @@ class DeadReckoning(Estimator):
         super().__init__()
         self.canvas_title = 'Dead Reckoning'
 
+    # u : list
+        # A list of system inputs, where, for the ith data point u[i],
+        # u[i][0] is timestamp (s),
+        # u[i][1] is left wheel rotational speed (rad/s), and
+        # u[i][2] is right wheel rotational speed (rad/s).
+
+    # x : list
+    #     A list of system states, where, for the ith data point x[i],
+    #     x[i][0] is timestamp (s),
+    #     x[i][1] is bearing (rad),
+    #     x[i][2] is translational position in x (m),
+    #     x[i][3] is translational position in y (m),
+    #     x[i][4] is left wheel rotational position (rad), and
+    #     x[i][5] is right wheel rotational position (rad).
+
     def update(self, _):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
