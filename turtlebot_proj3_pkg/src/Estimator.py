@@ -261,12 +261,36 @@ class DeadReckoning(Estimator):
     #     x[i][4] is left wheel rotational position (rad), and
     #     x[i][5] is right wheel rotational position (rad).
 
+    # g(x, u) = x + f(x, u) * delta t
+
+    # x  = [phi, x, y, theta_L, theta_R].T
+    # u = [u_L, u_R]
+
     def update(self, _):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
-            raise NotImplementedError
+            f_first = lambda x: np.array([[-self.r/(2*self.d), self.r/(2*self.d)], 
+                                            [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
+                                            [(self.r/2)*np.sin(x[1]), (self.r/2)*np.sin(x[1])],
+                                            [1, 0],
+                                            [0, 1]])
+            
+            f_second = lambda u: np.array([[u[1]],
+                                            [u[2]]])
+            
+            f = lambda x, u: np.matmul(f_first(x), f_second(u))
+            g = lambda x_hat_t, u_t: x_hat_t + f(x_hat_t, u_t) * self.dt
 
+            T = len(self.u)
+            t = 0
+            self.x_hat.append(self.x[0])
+            # self.x_hat[0] = self.x[0]
+
+            while t < T - 1:
+                self.x_hat.append(g(self.x_hat[t], self.u[t]))
+                # self.x_hat[t+1] = g(self.x_hat[t], self.u[t])
+                t = t + 1
 
 class KalmanFilter(Estimator):
     """Kalman filter estimator.
