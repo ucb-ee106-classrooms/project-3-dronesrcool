@@ -251,59 +251,6 @@ class DeadReckoning(Estimator):
             self.x_hat[0] = self.x[0]
 
 # noinspection PyPep8Naming
-class KalmanFilter(Estimator):
-    """Kalman filter estimator.
-
-    Your task is to implement the update method of this class using the u
-    attribute, y attribute, and x0. After building the
-    model, use the provided inputs and outputs to estimate system state over
-    time via the recursive Kalman filter update rule.
-
-    Attributes:
-    ----------
-        landmark : tuple
-            A tuple of the coordinates of the landmark.
-            landmark[0] is the x coordinate.
-            landmark[1] is the y coordinate.
-            landmark[2] is the z coordinate.
-
-    Example
-    ----------
-    To run the Kalman filter:
-        $ python drone_estimator_node.py --estimator kf
-    """
-    def __init__(self, is_noisy=False):
-        super().__init__(is_noisy)
-        self.canvas_title = 'Kalman Filter'
-        # TODO: Your implementation goes here!
-        # You may define the Q, R, and P matrices below.
-        self.A = None
-        self.B = None
-        self.C = None
-        self.Q = None
-        self.R = None
-        self.P = None
-
-    # noinspection DuplicatedCode
-    def update(self, i):
-        if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
-            # TODO: Your implementation goes here!
-            # You may use self.u, self.y, and self.x[0] for estimation
-            raise NotImplementedError
-
-    def g(self, x, u):
-        raise NotImplementedError
-
-    def h(self, x, y_obs):
-        raise NotImplementedError
-
-    def approx_A(self, x, u):
-        raise NotImplementedError
-    
-    def approx_C(self, x):
-        raise NotImplementedError
-
-# noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
     """Extended Kalman filter estimator.
 
