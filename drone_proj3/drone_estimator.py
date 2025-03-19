@@ -176,7 +176,7 @@ class OracleObserver(Estimator):
     Example
     ----------
     To run the oracle observer:
-        $ python drone_estimator_node.py --estimator oracle_observer
+        $ python drone_estimator_node.py --estimator oracle
     """
     def __init__(self, is_noisy=False):
         super().__init__(is_noisy)
@@ -200,7 +200,7 @@ class DeadReckoning(Estimator):
     Example
     ----------
     To run dead reckoning:
-        $ python drone_estimator_node.py --estimator dead_reckoning
+        $ python drone_estimator_node.py --estimator dr
     """
     def __init__(self, is_noisy=False):
         super().__init__(is_noisy)
@@ -243,9 +243,6 @@ class DeadReckoning(Estimator):
                                        + f(x, u) * self.dt
             
             while t < T - 1:
-                # length of x_hat is 2. append at index 2:  if t+1 = 2, replace, if t + 1 = 3, append
-                # length of x_hat is 1. append at index 1: if t+1 (1) > length of x_hat - 1 (0), append (appended)
-                                                            # if t + 1 (0) > length of x_hat - 1 (0), append (not appended)
                 if len(self.x_hat) - 1 < t + 1:
                     self.x_hat.append(g(self.x_hat[t], self.u[t]).reshape(6))
                 else: self.x_hat[t + 1] = g(self.x_hat[t], self.u[t]).reshape(6)
@@ -253,7 +250,58 @@ class DeadReckoning(Estimator):
         else: 
             self.x_hat[0] = self.x[0]
 
-        # print(self.x_hat)
+# noinspection PyPep8Naming
+class KalmanFilter(Estimator):
+    """Kalman filter estimator.
+
+    Your task is to implement the update method of this class using the u
+    attribute, y attribute, and x0. After building the
+    model, use the provided inputs and outputs to estimate system state over
+    time via the recursive Kalman filter update rule.
+
+    Attributes:
+    ----------
+        landmark : tuple
+            A tuple of the coordinates of the landmark.
+            landmark[0] is the x coordinate.
+            landmark[1] is the y coordinate.
+            landmark[2] is the z coordinate.
+
+    Example
+    ----------
+    To run the Kalman filter:
+        $ python drone_estimator_node.py --estimator kf
+    """
+    def __init__(self, is_noisy=False):
+        super().__init__(is_noisy)
+        self.canvas_title = 'Kalman Filter'
+        # TODO: Your implementation goes here!
+        # You may define the Q, R, and P matrices below.
+        self.A = None
+        self.B = None
+        self.C = None
+        self.Q = None
+        self.R = None
+        self.P = None
+
+    # noinspection DuplicatedCode
+    def update(self, i):
+        if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
+            # TODO: Your implementation goes here!
+            # You may use self.u, self.y, and self.x[0] for estimation
+            raise NotImplementedError
+
+    def g(self, x, u):
+        raise NotImplementedError
+
+    def h(self, x, y_obs):
+        raise NotImplementedError
+
+    def approx_A(self, x, u):
+        raise NotImplementedError
+    
+    def approx_C(self, x):
+        raise NotImplementedError
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
@@ -279,7 +327,7 @@ class ExtendedKalmanFilter(Estimator):
     Example
     ----------
     To run the extended Kalman filter:
-        $ python drone_estimator_node.py --estimator extended_kalman_filter
+        $ python drone_estimator_node.py --estimator ekf
     """
     def __init__(self, is_noisy=False):
         super().__init__(is_noisy)
