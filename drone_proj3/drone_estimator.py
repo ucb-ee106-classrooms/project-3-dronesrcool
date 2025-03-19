@@ -210,7 +210,50 @@ class DeadReckoning(Estimator):
         if len(self.x_hat) > 0:
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
-            raise NotImplementedError
+            # x_hat already has x[0] appended to it somewhere in the starter code, just added the else in the event that it is not
+            # x[0] is [x, y, phi, x_dot, y_dot, phi_dot]
+
+            T = len(self.u)
+            t = 0
+
+            f_first = lambda x: np.array([[0, 0],
+                                          [0, 0],
+                                          [0, 0],
+                                          [-np.sin(x[2])/self.m, 0],
+                                          [np.cos(x[2])/self.m, 0],
+                                          [0, 1/self.J]])
+            
+            f_second = lambda u: np.array([[u[0]],
+                                           [u[1]]])
+
+            f = lambda x, u: np.array([[x[3]],
+                                       [x[4]],
+                                       [x[5]],
+                                       [0],
+                                       [-self.gr],
+                                       [0]]) \
+                                       + np.dot(f_first(x), f_second(u))
+
+            g = lambda x, u: np.array([[x[0]],
+                                       [x[1]],
+                                       [x[2]],
+                                       [x[3]],
+                                       [x[4]],
+                                       [x[5]]]) \
+                                       + f(x, u) * self.dt
+            
+            while t < T - 1:
+                # length of x_hat is 2. append at index 2:  if t+1 = 2, replace, if t + 1 = 3, append
+                # length of x_hat is 1. append at index 1: if t+1 (1) > length of x_hat - 1 (0), append (appended)
+                                                            # if t + 1 (0) > length of x_hat - 1 (0), append (not appended)
+                if len(self.x_hat) - 1 < t + 1:
+                    self.x_hat.append(g(self.x_hat[t], self.u[t]).reshape(6))
+                else: self.x_hat[t + 1] = g(self.x_hat[t], self.u[t]).reshape(6)
+                t = t + 1
+        else: 
+            self.x_hat[0] = self.x[0]
+
+        # print(self.x_hat)
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
