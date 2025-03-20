@@ -271,26 +271,35 @@ class DeadReckoning(Estimator):
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
             f_first = lambda x: np.array([[-self.r/(2*self.d), self.r/(2*self.d)], 
-                                            [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
-                                            [(self.r/2)*np.sin(x[1]), (self.r/2)*np.sin(x[1])],
-                                            [1, 0],
-                                            [0, 1]])
+                                          [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
+                                          [(self.r/2)*np.sin(x[1]), (self.r/2)*np.sin(x[1])],
+                                          [1, 0],
+                                          [0, 1]])
             
             f_second = lambda u: np.array([[u[1]],
-                                            [u[2]]])
+                                           [u[2]]])
             
-            f = lambda x, u: np.matmul(f_first(x), f_second(u))
-            g = lambda x_hat_t, u_t: x_hat_t + f(x_hat_t, u_t) * self.dt
+            f = lambda x, u: np.dot(f_first(x), f_second(u))
+            g = lambda x, u: np.array([[x[1]],
+                                       [x[2]],
+                                       [x[3]],
+                                       [x[4]],
+                                       [x[5]]]) \
+                                       + f(x, u) * self.dt
 
             T = len(self.u)
             t = 0
+            timestamp = self.x[0][0]
             self.x_hat.append(self.x[0])
-            # self.x_hat[0] = self.x[0]
 
             while t < T - 1:
-                self.x_hat.append(g(self.x_hat[t], self.u[t]))
-                # self.x_hat[t+1] = g(self.x_hat[t], self.u[t])
+                next_xhat = np.array([timestamp]).append(g(self.x_hat[t], self.u[t]).reshape(6))
+                if len(self.x_hat) - 1 < t + 1:
+                    self.x_hat.append(next_xhat)
+                else: self.x_hat[t + 1] = next_xhat
                 t = t + 1
+        else:
+            self.x_hat[0] = self.x[0]
 
 
 class KalmanFilter(Estimator):
