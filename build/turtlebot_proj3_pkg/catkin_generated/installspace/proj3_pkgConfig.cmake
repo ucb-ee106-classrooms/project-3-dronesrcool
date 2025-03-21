@@ -67,14 +67,14 @@ set(proj3_pkg_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(proj3_pkg_SOURCE_PREFIX /home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/src/turtlebot_proj3_pkg)
-  set(proj3_pkg_DEVEL_PREFIX /home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/devel)
+  set(proj3_pkg_SOURCE_PREFIX /home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/src/turtlebot_proj3_pkg)
+  set(proj3_pkg_DEVEL_PREFIX /home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/devel)
   set(proj3_pkg_INSTALL_PREFIX "")
   set(proj3_pkg_PREFIX ${proj3_pkg_DEVEL_PREFIX})
 else()
   set(proj3_pkg_SOURCE_PREFIX "")
   set(proj3_pkg_DEVEL_PREFIX "")
-  set(proj3_pkg_INSTALL_PREFIX /home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/install)
+  set(proj3_pkg_INSTALL_PREFIX /home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/install)
   set(proj3_pkg_PREFIX ${proj3_pkg_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/install/lib;/opt/ros/eecsbot_ws/devel/lib;/opt/ros/noetic/lib)
+    foreach(path /home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/install/lib;/opt/ros/noetic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

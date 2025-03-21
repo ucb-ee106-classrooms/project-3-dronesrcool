@@ -327,13 +327,25 @@ class KalmanFilter(Estimator):
     def __init__(self):
         super().__init__()
         self.canvas_title = 'Kalman Filter'
-        self.phid = np.pi / 4
+        self.phid = np.pi/4
         # TODO: Your implementation goes here!
-        self.A = 
-        self.C =
-        self.Q = 
-        self.R = 
-        self.P_0 =  
+        # State transition matrix: 4x4
+        self.A = np.eye(4)
+
+        # Measurement matrix: 2x4 (measuring position only)
+        self.C = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0]
+        ])
+
+        # Covariance of process noise: 4x4
+        self.Q = 1 * np.eye(4)
+
+        # Covariance of measurement noise: 2x2
+        self.R = 0.01 * np.eye(2)
+
+        # Initial covariance: 4x4
+        self.P_0 = 1000 * np.eye(4)
         # You may define the A, C, Q, R, and P matrices below.
 
     # noinspection DuplicatedCode
@@ -343,29 +355,51 @@ class KalmanFilter(Estimator):
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
 
-            int t = 0
+            t = 0
             self.x_hat[t] = self.x[0]
-            P = [self.P_0]
+            P = [self.P_0.copy()]
             K = []
-            while t < len(self.x_hat):
+            timestamp = self.x[0][0]
+
+
+            # control_t = np.array([50, 50])
+            # print("x_hat: ",  self.x_hat, "\n")
+            T = len(self.u)
+            # print("u: ",  self.u, "\n")
+            while t < T:
+                self.B = self.dt * np.array([
+                    [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
+                    [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
+                    [1                          , 0],
+                    [0                          , 1],
+                ])
                 # State Extrapolation
-                next_x_hat_given_t = self.A@self.x_hat[t][2:] + self.B@self.u
+                # print("x_hat: ",  self.x_hat, "\n")
+                next_x_hat_given_t = self.A @ self.x_hat[t][2:] + self.B @ self.u[t][1:]
                 
                 #covariance extrapolation
-                next_P_given_t = self.A@P@self.A.T + self.Q
+                # print("This is P: ", P)
+                next_P_given_t = self.A @ P[t] @ self.A.T + self.Q
 
                 # Kalman Gain
-                K.append(next_P_given_t@self.C.T@(np.linalg.inv(self.c@next_P_given_t@self.C.T + self.R)))
+                k_gain = np.linalg.inv(self.C @ next_P_given_t @ self.C.T + self.R)
+                K.append(next_P_given_t @ self.C.T @ k_gain)
+                # print("k : ", K)
+                # print("y : ", self.y)
 
                 # State Update
-                self.x_hat.append(next_x_hat_given_t + K[-1]@(self.y[t+1][2:] - self.C@next_x_hat_given_t))
+                x_upd = next_x_hat_given_t + K[t] @ (self.y[t][2:] - self.C @ next_x_hat_given_t)
 
+
+                self.x_hat.append(np.concatenate(([timestamp + t * self.dt, self.x_hat[t][1]], x_upd), axis=None))
+                print("pos : ",  self.x_hat[t])
+                
                 #Covariance Update
-                self.P.append((np.eye(4) - K[-1]@self.C)@next_P_given_t)
+                P.append((np.eye(4) - K[t] @ self.C) @ next_P_given_t)
 
                 t += 1
             
-        return 0
+        return self.x_hat
 
 
 # noinspection PyPep8Naming
@@ -401,12 +435,106 @@ class ExtendedKalmanFilter(Estimator):
         self.canvas_title = 'Extended Kalman Filter'
         self.landmark = (0.5, 0.5)
         # TODO: Your implementation goes here!
+        self.A = np.eye(4)
+
+        self.B = self.dt * np.array([
+            [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
+            [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
+            [1                          , 0],
+            [0                          , 1],
+        ])
+
+        # Measurement matrix: 2x4 (measuring position only)
+        self.C = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0]
+        ])
+
+        # Covariance of process noise: 4x4
+        self.Q = 1 * np.eye(4)
+
+        # Covariance of measurement noise: 2x2
+        self.R = 0.01 * np.eye(2)
+
+        # Initial covariance: 4x4
+        self.P_0 = 1000 * np.eye(4)
         # You may define the Q, R, and P matrices below.
 
     # noinspection DuplicatedCode
     def update(self, _):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
-            # TODO: Your implementation goes here!
-            # You may use self.u, self.y, and self.x[0] for estimation
-            raise NotImplementedError
+            t = 0
+            self.x_hat[t] = self.x[0]
+            P = [self.P_0.copy()]
+            K = []
+            timestamp = self.x[0][0]
+
+            f_first = lambda x: np.array([[-self.r/(2*self.d), self.r/(2*self.d)], 
+                            [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
+                            [(self.r/2)*np.sin(x[1]), (self.r/2)*np.sin(x[1])],
+                            [1, 0],
+                            [0, 1]])
+        
+            f_prime = lambda x: np.array([[0, 0], 
+                            [-(self.r/2)*np.sin(x[1]), -(self.r/2)*np.sin(x[1])],
+                            [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
+                            [0, 0],
+                            [0, 0]])
+
+            f_second = lambda u: np.array([[u[1]],
+                                        [u[2]]])
+            
+            f = lambda x, u: np.dot(f_first(x), f_second(u))
+            g = lambda x, u: np.array([[x[1]],
+                                    [x[2]],
+                                    [x[3]],
+                                    [x[4]],
+                                    [x[5]]]) \
+                                    + f(x, u) * self.dt
+
+            g_prime = lambda x, u: np.array([[1],
+                                    [1],
+                                    [1],
+                                    [1],
+                                    [1]]) \
+                                    + f_prime(x) * self.dt
+
+            h_prime = lambda x, z: .5 * (((self.landmark[0] - x)**2 + (self.landmark[1] - z)**2)**(-.5)) * -2 * (self.landmark[0] - x)
+
+            h = lambda x, y: np.sqrt((self.landmark[0] - x)**2 + (self.landmark[1] - y)**2)
+
+            # control_t = np.array([50, 50])
+            # print("x_hat: ",  self.x_hat, "\n")
+            T = len(self.u)
+            # print("u: ",  self.u, "\n")
+            while t < T:
+                # State Extrapolation
+                # print("x_hat: ",  self.x_hat, "\n")
+
+
+                next_x_hat_given_t = g(self.x_hat[t][2:], self.u[t][1:])
+
+                A_next = g_prime(self.x_hat[t][2:], self.u[t][1:])
+                
+                next_P_given_t = A_next @ P[t] @ A_next.T + self.Q
+
+                C_next = np.array([[h_prime(next_x_hat_given_t[2],next_x_hat_given_t[3])], # h_prime[x,y] values
+                                    [0]])
+
+                k_gain = np.linalg.inv(C_next @ next_P_given_t @ C_next.T + self.R)
+                K.append(next_P_given_t @ C_next.T @ k_gain)
+                # print("k : ", K)
+                # print("y : ", self.y)
+
+                # State Update
+                x_upd = next_x_hat_given_t + K[t] @ (self.y[t][2:] - h(next_x_hat_given_t[2],next_x_hat_given_t[3]))
+
+
+                self.x_hat.append(np.concatenate(([timestamp + t * self.dt, self.x_hat[t][1]], x_upd), axis=None))
+                print("pos : ",  self.x_hat[t])
+                
+                #Covariance Update
+                P.append((np.eye(4) - K[t] @ C_next) @ next_P_given_t)
+
+                t += 1
 

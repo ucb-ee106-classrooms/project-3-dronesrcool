@@ -1,2 +1,2 @@
 turtlebot_proj3_pkg
--DCATKIN_DEVEL_PREFIX=/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/devel -DCMAKE_INSTALL_PREFIX=/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/install -G Unix Makefiles
+-DCATKIN_DEVEL_PREFIX=/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/devel -DCMAKE_INSTALL_PREFIX=/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/install -G Unix Makefiles

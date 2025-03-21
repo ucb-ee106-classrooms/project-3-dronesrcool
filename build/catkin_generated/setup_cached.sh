@@ -7,8 +7,7 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/devel:$CMAKE_PREFIX_PATH"
-export PATH='/opt/ros/noetic/bin:/share/b/grading/bin:/home/ff/ee106b/bin:/home/ff/ee106b/bin/arch/x86_64:/share/b/grading/bin:/home/ff/ee106b/bin:/home/ff/ee106b/bin/arch/x86_64:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/share/b/grading/bin:/share/b/grading/sbin:/share/b/runas/x86_64:/share/b/bin:/home/cc/ee106b/sp25/class/ee106b-aaq/.vscode/extensions/ms-python.debugpy-2025.0.1-linux-x64/bundled/scripts/noConfigScripts:/share/b/grading/bin:/share/b/grading/sbin:/share/b/runas/x86_64:/share/b/bin'
-export PWD='/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/build'
-export ROSLISP_PACKAGE_DIRECTORIES="/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/devel/share/common-lisp:$ROSLISP_PACKAGE_DIRECTORIES"
-export ROS_PACKAGE_PATH="/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/src:$ROS_PACKAGE_PATH"
+export CMAKE_PREFIX_PATH="/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/devel:$CMAKE_PREFIX_PATH"
+export PATH='/opt/ros/noetic/bin:/home/jamesl3483/anaconda3/bin:/home/jamesl3483/anaconda3/condabin:/home/jamesl3483/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/jamesl3483/.vscode/extensions/ms-python.debugpy-2025.4.1-linux-x64/bundled/scripts/noConfigScripts'
+export PWD='/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/build'
+export ROS_PACKAGE_PATH="/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/src:$ROS_PACKAGE_PATH"

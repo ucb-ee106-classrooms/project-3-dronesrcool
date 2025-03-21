@@ -1,8 +1,8 @@
-# Install script for directory: /home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/src/turtlebot_proj3_pkg
+# Install script for directory: /home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/src/turtlebot_proj3_pkg
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/install")
+  set(CMAKE_INSTALL_PREFIX "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkg.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkg.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/proj3_pkg/cmake" TYPE FILE FILES
-    "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkgConfig.cmake"
-    "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkgConfig-version.cmake"
+    "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkgConfig.cmake"
+    "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/build/turtlebot_proj3_pkg/catkin_generated/installspace/proj3_pkgConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/proj3_pkg" TYPE FILE FILES "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/src/turtlebot_proj3_pkg/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/proj3_pkg" TYPE FILE FILES "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/src/turtlebot_proj3_pkg/package.xml")
 endif()
 
