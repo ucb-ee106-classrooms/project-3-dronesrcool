@@ -391,7 +391,7 @@ class KalmanFilter(Estimator):
                 x_upd = next_x_hat_given_t + K[t] @ (self.y[t][2:] - self.C @ next_x_hat_given_t)
 
 
-                self.x_hat.append(np.concatenate(([timestamp + t * self.dt, self.x_hat[t][1]], x_upd), axis=None))
+                self.x_hat.append(np.concatenate(([self.u[t][0], self.x_hat[t][1]], x_upd), axis=None))
                 print("pos : ",  self.x_hat[t])
                 
                 #Covariance Update
@@ -434,15 +434,6 @@ class ExtendedKalmanFilter(Estimator):
         super().__init__()
         self.canvas_title = 'Extended Kalman Filter'
         self.landmark = (0.5, 0.5)
-        # TODO: Your implementation goes here!
-        self.A = np.eye(4)
-
-        self.B = self.dt * np.array([
-            [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
-            [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
-            [1                          , 0],
-            [0                          , 1],
-        ])
 
         # Measurement matrix: 2x4 (measuring position only)
         self.C = np.array([
@@ -451,13 +442,13 @@ class ExtendedKalmanFilter(Estimator):
         ])
 
         # Covariance of process noise: 4x4
-        self.Q = 1 * np.eye(4)
+        self.Q = 0.01 * np.eye(5)
 
         # Covariance of measurement noise: 2x2
-        self.R = 0.01 * np.eye(2)
+        self.R = 0.1 * np.eye(2)
 
         # Initial covariance: 4x4
-        self.P_0 = 1000 * np.eye(4)
+        self.P_0 = 100 * np.eye(5)
         # You may define the Q, R, and P matrices below.
 
     # noinspection DuplicatedCode
@@ -467,7 +458,6 @@ class ExtendedKalmanFilter(Estimator):
             self.x_hat[t] = self.x[0]
             P = [self.P_0.copy()]
             K = []
-            timestamp = self.x[0][0]
 
             f_first = lambda x: np.array([[-self.r/(2*self.d), self.r/(2*self.d)], 
                             [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
@@ -475,11 +465,11 @@ class ExtendedKalmanFilter(Estimator):
                             [1, 0],
                             [0, 1]])
         
-            f_prime = lambda x: np.array([[0, 0], 
-                            [-(self.r/2)*np.sin(x[1]), -(self.r/2)*np.sin(x[1])],
-                            [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
-                            [0, 0],
-                            [0, 0]])
+            f_prime = lambda x, u: np.array([[0, 0, 0, 0, 0], 
+                            [-(self.r/2)*np.sin(x[1])*u[1]-(self.r/2)*np.sin(x[1])*u[2], 0, 0, 0, 0],
+                            [(self.r/2)*np.cos(x[1])*u[1] + (self.r/2)*np.cos(x[1])*u[2], 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]])
 
             f_second = lambda u: np.array([[u[1]],
                                         [u[2]]])
@@ -492,16 +482,17 @@ class ExtendedKalmanFilter(Estimator):
                                     [x[5]]]) \
                                     + f(x, u) * self.dt
 
-            g_prime = lambda x, u: np.array([[1],
-                                    [1],
-                                    [1],
-                                    [1],
-                                    [1]]) \
-                                    + f_prime(x) * self.dt
+            g_prime = lambda x, u: np.eye(5) + f_prime(x, u) * self.dt
 
-            h_prime = lambda x, z: .5 * (((self.landmark[0] - x)**2 + (self.landmark[1] - z)**2)**(-.5)) * -2 * (self.landmark[0] - x)
+            d_prime_dx = lambda x: 0.5 * ((self.landmark[0] - x[1])**2 + (self.landmark[1] - x[2])**2)**(-.5) * -2 * (self.landmark[0] - x[1])
+            d_prime_dy = lambda x: 0.5 * ((self.landmark[0] - x[1])**2 + (self.landmark[1] - x[2])**2)**(-.5) * -2 * (self.landmark[0] - x[2])
+        
 
-            h = lambda x, y: np.sqrt((self.landmark[0] - x)**2 + (self.landmark[1] - y)**2)
+            h_prime = lambda x: np.array([[0, d_prime_dx(x)[0],  d_prime_dy(x)[0], 0, 0],
+                                    [1, 0, 0, 0 ,0 ]])
+
+            h = lambda x: np.array([np.sqrt((self.landmark[0] - x[1])**2 + (self.landmark[1] - x[2])**2), 
+                                       x[0]])
 
             # control_t = np.array([50, 50])
             # print("x_hat: ",  self.x_hat, "\n")
@@ -511,30 +502,38 @@ class ExtendedKalmanFilter(Estimator):
                 # State Extrapolation
                 # print("x_hat: ",  self.x_hat, "\n")
 
+ 
+                next_x_hat_given_t = g(self.x_hat[t], self.u[t])
 
-                next_x_hat_given_t = g(self.x_hat[t][2:], self.u[t][1:])
+                A_next = g_prime(self.x_hat[t], self.u[t])
+                # print("A_next ", A_next)
 
-                A_next = g_prime(self.x_hat[t][2:], self.u[t][1:])
+                next_P_given_t = A_next @ (P[t]) @ A_next.T + self.Q
+                # print("P  ", next_P_given_t)
                 
-                next_P_given_t = A_next @ P[t] @ A_next.T + self.Q
+                C_next = h_prime(next_x_hat_given_t) # h_prime[x,y] values
 
-                C_next = np.array([[h_prime(next_x_hat_given_t[2],next_x_hat_given_t[3])], # h_prime[x,y] values
-                                    [0]])
+                # print("c  ", C_next)
 
                 k_gain = np.linalg.inv(C_next @ next_P_given_t @ C_next.T + self.R)
                 K.append(next_P_given_t @ C_next.T @ k_gain)
-                # print("k : ", K)
                 # print("y : ", self.y)
 
                 # State Update
-                x_upd = next_x_hat_given_t + K[t] @ (self.y[t][2:] - h(next_x_hat_given_t[2],next_x_hat_given_t[3]))
+                temp = np.array([self.y[t][1:]]).T - h(next_x_hat_given_t)
 
+                # print("y " , h(next_x_hat_given_t))
+                # print("temp " , temp)
+                # print("k : ", K[t])
+                
+                x_upd = next_x_hat_given_t + K[t] @ (temp)
 
-                self.x_hat.append(np.concatenate(([timestamp + t * self.dt, self.x_hat[t][1]], x_upd), axis=None))
+                # print("pos : ",  x_upd)
+
+                self.x_hat.append(np.concatenate((np.array([self.u[t][0]]), x_upd.flatten())))
                 print("pos : ",  self.x_hat[t])
                 
                 #Covariance Update
-                P.append((np.eye(4) - K[t] @ C_next) @ next_P_given_t)
+                P.append((np.eye(5) - K[t] @ C_next) @ next_P_given_t)
 
                 t += 1
-
