@@ -279,34 +279,171 @@ class ExtendedKalmanFilter(Estimator):
     def __init__(self, is_noisy=False):
         super().__init__(is_noisy)
         self.canvas_title = 'Extended Kalman Filter'
-        # TODO: Your implementation goes here!
         # You may define the Q, R, and P matrices below.
-        self.A = None
-        self.B = None
-        self.C = None
-        self.Q = None
-        self.R = None
-        self.P = None
+        self.A = np.eye(4)
+        # self.B = self.dt * np.array([
+        #     [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
+        #     [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
+        #     [1                          , 0],
+        #     [0                          , 1],
+        # ])
+        # Measurement matrix: 2x4 (measuring position only)
+        self.C = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0]
+        ])
+        # Covariance of process noise: 4x4
+        self.Q = .5 * np.eye(6)
+        # Covariance of measurement noise: 2x2
+        self.R = 0.01 * np.eye(2)
+        # Initial covariance: 4x4
+        self.P_0 = 1000 * np.eye(6)
 
     # noinspection DuplicatedCode
     def update(self, i):
         if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
-            # TODO: Your implementation goes here!
-            # You may use self.u, self.y, and self.x[0] for estimation
-            print(self.x[0])
-            print(self.u)
-            print(self.y)
-            exit(0)
-            raise NotImplementedError
+            t = 0
+            self.x_hat[t] = self.x[0]
+            P = [self.P_0.copy()]
+            K = []
+            T = len(self.u)
+            while t < T:
+                # State Extrapolation
+                # print("x_hat: ",  self.x_hat, "\n")
+
+
+                next_x_hat_given_t = self.g(self.x_hat[t], self.u[t])
+
+                A_next = self.approx_A(self.x_hat[t], self.u[t])
+                # print("A_next ", A_next)
+
+                next_P_given_t = A_next @ (P[t]) @ A_next.T + self.Q
+                # print("P  ", next_P_given_t)
+                
+                C_next = self.h_prime(next_x_hat_given_t) # h_prime[x,y] values
+
+                # print("c  ", C_next)
+
+                k_gain = np.linalg.inv(C_next @ next_P_given_t @ C_next.T + self.R)
+                K.append(next_P_given_t @ C_next.T @ k_gain)
+                # print("y : ", self.y)
+
+                # State Update
+
+                # print("y " , np.array([self.y[t]]))
+                # print("y " , self.h(next_x_hat_given_t))
+                temp = np.array(self.y[t]) - self.h(next_x_hat_given_t)
+                # print("temp " , temp)
+                # print("k : ", K[t])
+                
+                next_xhat = (next_x_hat_given_t + K[t] @ (temp))
+
+                # print("pos : ",  x_upd)
+                # next_xhat = np.concatenate((np.array([self.u[t][0]]), x_upd.flatten()))
+                if len(self.x_hat) - 1 < t + 1:
+                    self.x_hat.append(next_xhat)
+                else: self.x_hat[t + 1] = next_xhat
+                
+                # print("pos : ",  next_xhat)
+                
+                #Covariance Update
+                P.append((np.eye(6) - K[t] @ C_next) @ next_P_given_t)
+
+                t += 1
+        else:
+            self.x_hat[t] = self.x[0]
+        return self.x_hat
 
     def g(self, x, u):
-        raise NotImplementedError
+        
 
-    def h(self, x, y_obs):
-        raise NotImplementedError
 
-    def approx_A(self, x, u):
-        raise NotImplementedError
+        # print("Ax : " ,self.approx_A(x,u)@x)
+        # print("x : " , x)
+        # print("Bu: " , self.approx_B(x,u)@u)
+        # print("u : " , u)
+        # print("E : " , self.approx_E(x,u))
+
+
+
+        return self.approx_A(x,u) @ x + self.approx_B(x,u) @ u + self.approx_E(x,u)
+
+    def h(self, x): # There was a y_obs I deleted, IDK why there is one
+        # print("x is ", x)
+        # print("x[0] is ", x[0])
+        # print( "h func: ", np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2))
+        
+        
+        return np.array([np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2), 
+                                       x[2]])
+    
+    def h_prime(self, x):
+
+
+
+        d_prime_dx = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[1] - x[1])**2)**(-.5) * -2 * (self.landmark[0] - x[0])
+        d_prime_dy = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[1] - x[1])**2)**(-.5) * -2 * (self.landmark[0] - x[1])
+        
+        h = np.array([[d_prime_dx(x),  d_prime_dy(x), 0, 0, 0, 0],
+                      [0               ,0                 , 1, 0, 0, 0]])
+        
+        return h
+
+    def approx_A(self, x, u): # Assuming no timestamp
+
+        f_prime = np.array([[0, 0, 0,                       1, 0, 0], 
+                            [0, 0, 0,                       0, 1, 0],
+                            [0, 0, 0,                       0, 0, 1],
+                            [0,0, -np.cos(x[2])/self.m*u[0],0, 0, 0],
+                            [0,0,-np.sin(x[2])/self.m*u[0] , 0, 0, 0],
+                            [0, 0, 0,                       0, 0, 0]])
+        return np.eye(6) + f_prime * self.dt
+                            
+    def approx_B(self, x, u): # Assuming no timestamp
+        f_prime = np.array([[0, 0,], 
+                            [0, 0],
+                            [0, 0],
+                            [-np.sin(x[2])/self.m,0],
+                            [np.cos(x[2])/self.m , 0],
+                            [0, 1/self.J]])
+        return f_prime * self.dt
+    
+    def approx_E(self, x, u): # Assuming no timestamp
+        f_first = lambda x: np.array([[0, 0],
+                                        [0, 0],
+                                        [0, 0],
+                                        [-np.sin(x[2])/self.m, 0],
+                                        [np.cos(x[2])/self.m, 0],
+                                        [0, 1/self.J]])
+        
+        f_second = lambda u: np.array([[u[0]],
+                                        [u[1]]])
+
+        f = lambda x, u: np.array([[x[3]],
+                                [x[4]],
+                                [x[5]],
+                                [0],
+                                [-self.gr],
+                                [0]]) \
+                                + np.dot(f_first(x), f_second(u))
+
+        g = lambda x, u: np.array([[x[0]],
+                                       [x[1]],
+                                       [x[2]],
+                                       [x[3]],
+                                       [x[4]],
+                                       [x[5]]]) \
+                                       + f(x, u) * self.dt
+        
+
+        # print(" g : ", g(x,u).flatten())
+        # print(" A in E: ", self.approx_A(x,u)@x)
+        # print(" B in E: ", self.approx_B(x,u)@u)
+
+
+        return g(x,u).flatten() - self.approx_A(x,u)@x - self.approx_B(x,u)@u
+
+
     
     def approx_C(self, x):
         raise NotImplementedError

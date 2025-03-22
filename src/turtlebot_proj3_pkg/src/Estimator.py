@@ -335,7 +335,13 @@ class KalmanFilter(Estimator):
         # TODO: Your implementation goes here!
         # State transition matrix: 4x4
         self.A = np.eye(4)
-
+       
+        self.B = self.dt * np.array([
+            [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
+            [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
+            [1                          , 0],
+            [0                          , 1],
+        ])
         # Measurement matrix: 2x4 (measuring position only)
         self.C = np.array([
             [1, 0, 0, 0],
@@ -343,7 +349,7 @@ class KalmanFilter(Estimator):
         ])
 
         # Covariance of process noise: 4x4
-        self.Q = 1 * np.eye(4)
+        self.Q = .5 * np.eye(4)
 
         # Covariance of measurement noise: 2x2
         self.R = 0.01 * np.eye(2)
@@ -371,12 +377,7 @@ class KalmanFilter(Estimator):
             T = len(self.u)
             # print("u: ",  self.u, "\n")
             while t < T:
-                self.B = self.dt * np.array([
-                    [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
-                    [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
-                    [1                          , 0],
-                    [0                          , 1],
-                ])
+
                 # State Extrapolation
                 # print("x_hat: ",  self.x_hat, "\n")
                 next_x_hat_given_t = self.A @ self.x_hat[t][2:] + self.B @ self.u[t][1:]
@@ -394,8 +395,11 @@ class KalmanFilter(Estimator):
                 # State Update
                 x_upd = next_x_hat_given_t + K[t] @ (self.y[t][2:] - self.C @ next_x_hat_given_t)
 
+                next_xhat = np.concatenate(([self.u[t][0], self.x_hat[t][1]], x_upd), axis=None)
 
-                self.x_hat.append(np.concatenate(([self.u[t][0], self.x_hat[t][1]], x_upd), axis=None))
+                if len(self.x_hat) - 1 < t + 1:
+                    self.x_hat.append(next_xhat)
+                else: self.x_hat[t + 1] = next_xhat
                 print("pos : ",  self.x_hat[t])
                 
                 #Covariance Update
@@ -533,8 +537,11 @@ class ExtendedKalmanFilter(Estimator):
                 x_upd = next_x_hat_given_t + K[t] @ (temp)
 
                 # print("pos : ",  x_upd)
-
                 self.x_hat.append(np.concatenate((np.array([self.u[t][0]]), x_upd.flatten())))
+                if len(self.x_hat) - 1 < t + 1:
+                    self.x_hat.append(next_xhat)
+                else: self.x_hat[t + 1] = next_xhat
+                
                 print("pos : ",  self.x_hat[t])
                 
                 #Covariance Update
