@@ -281,21 +281,16 @@ class ExtendedKalmanFilter(Estimator):
         self.canvas_title = 'Extended Kalman Filter'
         # You may define the Q, R, and P matrices below.
         self.A = np.eye(4)
-        # self.B = self.dt * np.array([
-        #     [self.r/2*np.cos(self.phid) , self.r/2*np.cos(self.phid)],
-        #     [self.r/2*np.sin(self.phid) , self.r/2*np.sin(self.phid)],
-        #     [1                          , 0],
-        #     [0                          , 1],
-        # ])
+
         # Measurement matrix: 2x4 (measuring position only)
         self.C = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0]
         ])
         # Covariance of process noise: 4x4
-        self.Q = .5 * np.eye(6)
+        self.Q = .001 * np.eye(6)
         # Covariance of measurement noise: 2x2
-        self.R = 0.01 * np.eye(2)
+        self.R = 0.1 * np.eye(2)
         # Initial covariance: 4x4
         self.P_0 = 1000 * np.eye(6)
 
@@ -311,40 +306,26 @@ class ExtendedKalmanFilter(Estimator):
                 # State Extrapolation
                 # print("x_hat: ",  self.x_hat, "\n")
 
-
                 next_x_hat_given_t = self.g(self.x_hat[t], self.u[t])
 
                 A_next = self.approx_A(self.x_hat[t], self.u[t])
-                # print("A_next ", A_next)
 
                 next_P_given_t = A_next @ (P[t]) @ A_next.T + self.Q
-                # print("P  ", next_P_given_t)
                 
                 C_next = self.h_prime(next_x_hat_given_t) # h_prime[x,y] values
 
-                # print("c  ", C_next)
-
                 k_gain = np.linalg.inv(C_next @ next_P_given_t @ C_next.T + self.R)
                 K.append(next_P_given_t @ C_next.T @ k_gain)
-                # print("y : ", self.y)
 
                 # State Update
 
-                # print("y " , np.array([self.y[t]]))
-                # print("y " , self.h(next_x_hat_given_t))
                 temp = np.array(self.y[t]) - self.h(next_x_hat_given_t)
-                # print("temp " , temp)
-                # print("k : ", K[t])
                 
                 next_xhat = (next_x_hat_given_t + K[t] @ (temp))
 
-                # print("pos : ",  x_upd)
-                # next_xhat = np.concatenate((np.array([self.u[t][0]]), x_upd.flatten()))
                 if len(self.x_hat) - 1 < t + 1:
                     self.x_hat.append(next_xhat)
                 else: self.x_hat[t + 1] = next_xhat
-                
-                # print("pos : ",  next_xhat)
                 
                 #Covariance Update
                 P.append((np.eye(6) - K[t] @ C_next) @ next_P_given_t)
@@ -352,40 +333,25 @@ class ExtendedKalmanFilter(Estimator):
                 t += 1
         else:
             self.x_hat[t] = self.x[0]
+        self.x_hat.pop(0)
+        
         return self.x_hat
 
     def g(self, x, u):
         
-
-
-        # print("Ax : " ,self.approx_A(x,u)@x)
-        # print("x : " , x)
-        # print("Bu: " , self.approx_B(x,u)@u)
-        # print("u : " , u)
-        # print("E : " , self.approx_E(x,u))
-
-
-
         return self.approx_A(x,u) @ x + self.approx_B(x,u) @ u + self.approx_E(x,u)
 
     def h(self, x): # There was a y_obs I deleted, IDK why there is one
-        # print("x is ", x)
-        # print("x[0] is ", x[0])
-        # print( "h func: ", np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2))
-        
-        
-        return np.array([np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2), 
+        return np.array([np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[2] - x[1])**2), 
                                        x[2]])
     
     def h_prime(self, x):
 
-
-
-        d_prime_dx = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[1] - x[1])**2)**(-.5) * -2 * (self.landmark[0] - x[0])
-        d_prime_dy = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[1] - x[1])**2)**(-.5) * -2 * (self.landmark[0] - x[1])
+        d_prime_dx = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[2] - x[1])**2)**(-.5) * -2 * (self.landmark[0] - x[0])
+        d_prime_dz = lambda x: 0.5 * ((self.landmark[0] - x[0])**2 + (self.landmark[2] - x[1])**2)**(-.5) * -2 * (self.landmark[2] - x[1])
         
-        h = np.array([[d_prime_dx(x),  d_prime_dy(x), 0, 0, 0, 0],
-                      [0               ,0                 , 1, 0, 0, 0]])
+        h = np.array([[d_prime_dx(x),  d_prime_dz(x), 0, 0, 0, 0],
+                      [0               ,0           , 1, 0, 0, 0]])
         
         return h
 
@@ -436,14 +402,11 @@ class ExtendedKalmanFilter(Estimator):
                                        + f(x, u) * self.dt
         
 
-        # print(" g : ", g(x,u).flatten())
-        # print(" A in E: ", self.approx_A(x,u)@x)
-        # print(" B in E: ", self.approx_B(x,u)@u)
-
 
         return g(x,u).flatten() - self.approx_A(x,u)@x - self.approx_B(x,u)@u
 
 
     
     def approx_C(self, x):
+        # h_prime
         raise NotImplementedError
