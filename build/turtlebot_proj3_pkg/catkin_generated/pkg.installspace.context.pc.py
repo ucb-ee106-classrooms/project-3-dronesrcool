@@ -4,5 +4,5 @@ PROJECT_PKG_CONFIG_INCLUDE_DIRS = "".split(';') if "" != "" else []
 PROJECT_CATKIN_DEPENDS = "".replace(';', ' ')
 PKG_CONFIG_LIBRARIES_WITH_PREFIX = "".split(';') if "" != "" else []
 PROJECT_NAME = "proj3_pkg"
-PROJECT_SPACE_DIR = "/home/cc/ee106b/sp25/class/ee106b-aaq/project-3-dronesrcool/install"
+PROJECT_SPACE_DIR = "/home/jamesl3483/Desktop/eecs106b/project-3-dronesrcool/install"
 PROJECT_VERSION = "0.0.0"
