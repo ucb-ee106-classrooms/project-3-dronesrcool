@@ -293,8 +293,11 @@ class DeadReckoning(Estimator):
             self.x_hat.append(self.x[0])
 
             while t < T - 1:
-                next_xhat = [timestamp]
-                next_xhat.append(g(self.x_hat[t], self.u[t]).reshape(6))
+                next_xhat = np.array([self.u[t][0]])
+                print( g(self.x_hat[t], self.u[t]).reshape(5))
+                next_xhat = np.concatenate((next_xhat, g(self.x_hat[t], self.u[t]).reshape(5)))
+                print(next_xhat)
+                print(np.array(next_xhat))
                 if len(self.x_hat) - 1 < t + 1:
                     self.x_hat.append(next_xhat)
                 else: self.x_hat[t + 1] = next_xhat
