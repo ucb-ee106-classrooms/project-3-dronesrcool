@@ -293,6 +293,10 @@ class ExtendedKalmanFilter(Estimator):
         if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
+            print(self.x[0])
+            print(self.u)
+            print(self.y)
+            exit(0)
             raise NotImplementedError
 
     def g(self, x, u):
