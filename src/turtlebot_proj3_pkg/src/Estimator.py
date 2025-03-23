@@ -2,6 +2,7 @@ import rospy
 from std_msgs.msg import Float32MultiArray
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 plt.rcParams['font.family'] = ['FreeSans', 'Helvetica', 'Arial']
 plt.rcParams['font.size'] = 14
 
@@ -245,6 +246,7 @@ class DeadReckoning(Estimator):
     def __init__(self):
         super().__init__()
         self.canvas_title = 'Dead Reckoning'
+        self.computation_time = []
 
     # u : list
         # A list of system inputs, where, for the ith data point u[i],
@@ -266,9 +268,25 @@ class DeadReckoning(Estimator):
     # x  = [phi, x, y, theta_L, theta_R].T
     # u = [u_L, u_R]
 
+    def accuracy(self, ): # RSME
+        x_array = np.array(self.x)         # Shape: (num_samples, num_dimensions)
+        xhat_array = np.array(self.x_hat)  # Same shape as x_array
+        
+        # Compute element-wise differences, then square
+        diff = x_array - xhat_array
+        squared_diff = diff ** 2
+        
+        # Take the mean across samples (rows), keep separate for each dimension
+        mean_squared_diff = np.mean(squared_diff, axis=0)
+        
+        # Take the square root to get RMSE
+        rmse = np.sqrt(mean_squared_diff)
+        return rmse
+
+
     def update(self, _):
+        start_time = time.time()
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
-            # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
             f_first = lambda x: np.array([[-self.r/(2*self.d), self.r/(2*self.d)], 
                                           [(self.r/2)*np.cos(x[1]), (self.r/2)*np.cos(x[1])],
@@ -294,16 +312,21 @@ class DeadReckoning(Estimator):
 
             while t < T - 1:
                 next_xhat = np.array([self.u[t][0]])
-                print( g(self.x_hat[t], self.u[t]).reshape(5))
+                # print( g(self.x_hat[t], self.u[t]).reshape(5))
                 next_xhat = np.concatenate((next_xhat, g(self.x_hat[t], self.u[t]).reshape(5)))
-                print(next_xhat)
-                print(np.array(next_xhat))
                 if len(self.x_hat) - 1 < t + 1:
                     self.x_hat.append(next_xhat)
                 else: self.x_hat[t + 1] = next_xhat
                 t = t + 1
         else:
             self.x_hat[0] = self.x[0]
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.computation_time.append(elapsed_time)
+        print(f"Average Execution time per step: {sum(self.computation_time)/len(self.computation_time)} seconds")
+        print(f"Execution time: {elapsed_time} seconds")
+        print("Accuracy: ", self.accuracy())
 
 
 class KalmanFilter(Estimator):
@@ -332,6 +355,8 @@ class KalmanFilter(Estimator):
         super().__init__()
         self.canvas_title = 'Kalman Filter'
         self.phid = np.pi/4
+        self.computation_time = []
+
         # TODO: Your implementation goes here!
         # State transition matrix: 4x4
         self.A = np.eye(4)
@@ -358,9 +383,32 @@ class KalmanFilter(Estimator):
         self.P_0 = 1000 * np.eye(4)
         # You may define the A, C, Q, R, and P matrices below.
 
+    def accuracy(self, ): # RSME
+        x_array = np.array(self.x)         # Shape: (num_samples, num_dimensions)
+        xhat_array = np.array(self.x_hat)  # Same shape as x_array
+        
+        min_len = min(len(x_array), len(xhat_array))
+
+        # Trim both arrays to the same minimum length
+        x_array_trimmed = x_array[:min_len]
+        xhat_array_trimmed = xhat_array[:min_len]
+
+        # Compute the difference and squared difference
+        diff = x_array_trimmed - xhat_array_trimmed
+        squared_diff = diff ** 2
+                
+        # Take the mean across samples (rows), keep separate for each dimension
+        mean_squared_diff = np.mean(squared_diff, axis=0)
+        
+        # Take the square root to get RMSE
+        rmse = np.sqrt(mean_squared_diff)
+        return rmse
+   
+   
     # noinspection DuplicatedCode
     # noinspection PyPep8Naming
     def update(self, _):
+        start_time = time.time()
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
@@ -400,12 +448,20 @@ class KalmanFilter(Estimator):
                 if len(self.x_hat) - 1 < t + 1:
                     self.x_hat.append(next_xhat)
                 else: self.x_hat[t + 1] = next_xhat
-                print("pos : ",  self.x_hat[t])
                 
                 #Covariance Update
                 P.append((np.eye(4) - K[t] @ self.C) @ next_P_given_t)
 
                 t += 1
+
+
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.computation_time.append(elapsed_time)
+        print(f"Average Execution time per step: {sum(self.computation_time)/len(self.computation_time)} seconds")
+        print(f"Execution time: {elapsed_time} seconds")
+        print("Accuracy: ", self.accuracy())
             
         return self.x_hat
 

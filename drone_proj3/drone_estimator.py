@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 plt.rcParams['font.family'] = ['Arial']
 plt.rcParams['font.size'] = 14
 
@@ -205,8 +206,32 @@ class DeadReckoning(Estimator):
     def __init__(self, is_noisy=False):
         super().__init__(is_noisy)
         self.canvas_title = 'Dead Reckoning'
+        self.computation_time = []
 
+    def accuracy(self, ): # RSME
+        x_array = np.array(self.x)         # Shape: (num_samples, num_dimensions)
+        xhat_array = np.array(self.x_hat)  # Same shape as x_array
+        
+        min_len = min(len(x_array), len(xhat_array))
+
+        # Trim both arrays to the same minimum length
+        x_array_trimmed = x_array[:min_len]
+        xhat_array_trimmed = xhat_array[:min_len]
+
+        # Compute the difference and squared difference
+        diff = x_array_trimmed - xhat_array_trimmed
+        squared_diff = diff ** 2
+                
+        # Take the mean across samples (rows), keep separate for each dimension
+        mean_squared_diff = np.mean(squared_diff, axis=0)
+        
+        # Take the square root to get RMSE
+        rmse = np.sqrt(mean_squared_diff)
+        return rmse
+   
     def update(self, _):
+        start_time = time.time()
+
         if len(self.x_hat) > 0:
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
@@ -249,6 +274,13 @@ class DeadReckoning(Estimator):
                 t = t + 1
         else: 
             self.x_hat[0] = self.x[0]
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.computation_time.append(elapsed_time)
+        print(f"Average Execution time per step: {sum(self.computation_time)/len(self.computation_time)} seconds")
+        print(f"Execution time: {elapsed_time} seconds")
+        print("Accuracy: ", self.accuracy())
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
@@ -293,9 +325,35 @@ class ExtendedKalmanFilter(Estimator):
         self.R = 0.1 * np.eye(2)
         # Initial covariance: 4x4
         self.P_0 = 1000 * np.eye(6)
+        self.computation_time = []
+
+
+    def accuracy(self, ): # RSME
+        x_array = np.array(self.x)         # Shape: (num_samples, num_dimensions)
+        xhat_array = np.array(self.x_hat)  # Same shape as x_array
+        
+        min_len = min(len(x_array), len(xhat_array))
+
+        # Trim both arrays to the same minimum length
+        x_array_trimmed = x_array[:min_len]
+        xhat_array_trimmed = xhat_array[:min_len]
+
+        # Compute the difference and squared difference
+        diff = x_array_trimmed - xhat_array_trimmed
+        squared_diff = diff ** 2
+                
+        # Take the mean across samples (rows), keep separate for each dimension
+        mean_squared_diff = np.mean(squared_diff, axis=0)
+        
+        # Take the square root to get RMSE
+        rmse = np.sqrt(mean_squared_diff)
+        return rmse
+   
 
     # noinspection DuplicatedCode
     def update(self, i):
+        start_time = time.time()
+
         if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
             t = 0
             self.x_hat[t] = self.x[0]
@@ -304,8 +362,6 @@ class ExtendedKalmanFilter(Estimator):
             T = len(self.u)
             while t < T:
                 # State Extrapolation
-                # print("x_hat: ",  self.x_hat, "\n")
-
                 next_x_hat_given_t = self.g(self.x_hat[t], self.u[t])
 
                 A_next = self.approx_A(self.x_hat[t], self.u[t])
@@ -316,10 +372,15 @@ class ExtendedKalmanFilter(Estimator):
 
                 k_gain = np.linalg.inv(C_next @ next_P_given_t @ C_next.T + self.R)
                 K.append(next_P_given_t @ C_next.T @ k_gain)
+                # print("y : ", self.y)
 
                 # State Update
 
+                # print("y " , np.array([self.y[t]]))
+                # print("y " , self.h(next_x_hat_given_t))
                 temp = np.array(self.y[t]) - self.h(next_x_hat_given_t)
+                # print("temp " , temp)
+                # print("k : ", K[t])
                 
                 next_xhat = (next_x_hat_given_t + K[t] @ (temp))
 
@@ -333,16 +394,36 @@ class ExtendedKalmanFilter(Estimator):
                 t += 1
         else:
             self.x_hat[t] = self.x[0]
-        self.x_hat.pop(0)
-        
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.computation_time.append(elapsed_time)
+        print(f"Average Execution time per step: {sum(self.computation_time)/len(self.computation_time)} seconds")
+        print(f"Execution time: {elapsed_time} seconds")
+        print("Accuracy: ", self.accuracy())
         return self.x_hat
 
     def g(self, x, u):
         
+
+
+        # print("Ax : " ,self.approx_A(x,u)@x)
+        # print("x : " , x)
+        # print("Bu: " , self.approx_B(x,u)@u)
+        # print("u : " , u)
+        # print("E : " , self.approx_E(x,u))
+
+
+
         return self.approx_A(x,u) @ x + self.approx_B(x,u) @ u + self.approx_E(x,u)
 
     def h(self, x): # There was a y_obs I deleted, IDK why there is one
-        return np.array([np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[2] - x[1])**2), 
+        # print("x is ", x)
+        # print("x[0] is ", x[0])
+        # print( "h func: ", np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2))
+        
+        
+        return np.array([np.sqrt((self.landmark[0] - x[0])**2 + self.landmark[1]**2 + (self.landmark[1] - x[1])**2), 
                                        x[2]])
     
     def h_prime(self, x):
@@ -401,6 +482,10 @@ class ExtendedKalmanFilter(Estimator):
                                        [x[5]]]) \
                                        + f(x, u) * self.dt
         
+
+        # print(" g : ", g(x,u).flatten())
+        # print(" A in E: ", self.approx_A(x,u)@x)
+        # print(" B in E: ", self.approx_B(x,u)@u)
 
 
         return g(x,u).flatten() - self.approx_A(x,u)@x - self.approx_B(x,u)@u
